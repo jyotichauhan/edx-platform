@@ -93,6 +93,9 @@ urlpatterns = (
     # Video Abstraction Layer used to allow video teams to manage video assets
     # independently of courseware. https://github.com/edx/edx-val
     url(r'^api/val/v0/', include('edxval.urls')),
+
+    # Credit API end-points
+    url(r'^api/credit/', include('openedx.core.djangoapps.credit.urls')),
 )
 
 if settings.FEATURES["ENABLE_COMBINED_LOGIN_REGISTRATION"]:
