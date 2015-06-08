@@ -43,6 +43,11 @@ ANALYTICS_API_KEY = ""
 ANALYTICS_DASHBOARD_URL = None
 
 
+########################### PIPELINE #################################
+
+# Skip RequireJS optimizer in development
+STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
+
 ################################ DEBUG TOOLBAR ################################
 
 INSTALLED_APPS += ('debug_toolbar', 'debug_toolbar_mongo')
@@ -169,6 +174,12 @@ FEATURES['ENABLE_SHOPPING_CART'] = True
 FEATURES['STORE_BILLING_INFO'] = True
 FEATURES['ENABLE_PAID_COURSE_REGISTRATION'] = True
 FEATURES['ENABLE_COSMETIC_DISPLAY_PRICE'] = True
+
+
+################################# DJANGO-REQUIRE ###############################
+
+# Whether to run django-require in debug mode.
+REQUIRE_DEBUG = DEBUG
 
 
 #####################################################################

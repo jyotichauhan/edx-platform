@@ -9,7 +9,7 @@
   java, location, Components, FileUtils */
 
 // Added by edX: we namespace requirejs and its associated functions.
-var namespaced_define = window.define !== undefined ? define : RequireJS.define;
+var namespaced_define = define !== undefined ? define : RequireJS.define;
 
 namespaced_define(['module'], function (module) {
     'use strict';
