@@ -4,7 +4,7 @@
 class CreditApiBadRequest(Exception):
     """
     Could not complete a request to the credit API because
-    the parameters were not valid.
+    there was a problem with the request (as opposed to an internal error).
     """
     pass
 

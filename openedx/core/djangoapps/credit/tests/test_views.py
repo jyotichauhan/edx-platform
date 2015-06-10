@@ -55,7 +55,7 @@ class CreditProviderViewTests(UrlResetMixin, TestCase):
         """
         Configure a credit course.
         """
-        super(CreditProviderViewTests, self).setUp('openedx.core.djangoapps.credit.urls')
+        super(CreditProviderViewTests, self).setUp()
 
         # Create the test user and log in
         self.user = UserFactory(username=self.USERNAME, password=self.PASSWORD)

@@ -210,10 +210,7 @@ def create_credit_request(course_key, provider_id, username):
         credit_course = user_eligibility.course
         credit_provider = user_eligibility.provider
     except CreditEligibility.DoesNotExist:
-        log.warning(
-            u'User tried to initiate a request for credit, '
-            u'but the user is not eligible for credit'
-        )
+        log.warning(u'User tried to initiate a request for credit, but the user is not eligible for credit')
         raise UserIsNotEligible
 
     # Check if we've enabled automatic integration with the credit

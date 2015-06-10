@@ -9,6 +9,7 @@ successful completion of a course on EdX
 import logging
 
 from django.db import models
+from django.core.validators import RegexValidator
 from simple_history.models import HistoricalRecords
 
 
@@ -31,8 +32,14 @@ class CreditProvider(TimeStampedModel):
     """
     provider_id = models.CharField(
         max_length=255,
-        db_index=True,
         unique=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[a-z,A-Z,0-9,\-]+$",
+                message="Only alphanumeric characters and hyphens (-) are allowed",
+                code="invalid_provider_id",
+            )
+        ],
         help_text=ugettext_lazy(
             "Unique identifier for this credit provider. "
             "Only alphanumeric characters and hyphens (-) are allowed. "
