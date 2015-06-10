@@ -138,7 +138,8 @@ class LoncapaResponse(object):
     allowed_inputfields = []
     required_attributes = []
 
-    # Overridable field that specifies whether this capa response type has support for responsive UI.
+    # Overridable field that specifies whether this capa response type has support for
+    # responsive UI, for rendering on devices of different sizes and shapes.
     # By default, we set this to False, allowing subclasses to override as appropriate.
     has_responsive_ui = False
 
