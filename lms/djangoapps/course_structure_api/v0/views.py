@@ -339,7 +339,7 @@ class CourseBlocksAndNavigation(ListAPIView):
 
         * navigation_depth (integer) Indicates how far deep to traverse into the course hierarchy before bundling
           all the descendants.
-          Default is 3.
+          Default is 3 since typical navigational views of the course show a maximum of chapter->sequential->vertical.
 
           Example: navigation_depth=3
 
@@ -426,6 +426,7 @@ class CourseBlocksAndNavigation(ListAPIView):
                 )
 
                 # navigation_depth
+                # See docstring for why we default to 3.
                 self.navigation_depth = int(request.GET.get('navigation_depth', '3'))
 
                 # block_json
