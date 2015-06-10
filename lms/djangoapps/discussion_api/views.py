@@ -213,7 +213,8 @@ class CommentViewSet(_ViewMixin, DeveloperErrorViewMixin, ViewSet):
     """
     **Use Cases**
 
-        Retrieve the list of comments in a thread.
+        Retrieve the list of comments in a thread, create a comment, or modify
+        an existing comment.
 
     **Example Requests**:
 
