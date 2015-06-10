@@ -345,10 +345,14 @@ class CourseBlocksAndNavigation(ListAPIView):
 
     **Response Values**
 
+        The following fields are returned with a successful response.
+        Only either one of blocks, navigation, or blocks+navigation is returned depending on which endpoint is used.
+        The "root" field is returned for all endpoints.
+
         * root: The ID of the root node of the course blocks.
 
         * blocks: A dictionary that maps block usage IDs to a collection of information about each block.
-          Each block contains the following fields.
+          Each block contains the following fields.  Returned only if using the "blocks" endpoint.
 
           * id: (string) The usage ID of the block.
 
@@ -385,13 +389,14 @@ class CourseBlocksAndNavigation(ListAPIView):
             Returned only if "responsive_ui" is included in the "fields" parameter.
 
         * navigation: A dictionary that maps block IDs to a collection of navigation information about each block.
-          Each block contains the following fields.
+          Each block contains the following fields. Returned only if using the "navigation" endpoint.
 
           * descendants: (list) A list of IDs of the children of the block if the block's depth in the
             course hierarchy is less than the navigation_depth.  Otherwise, a list of IDs of the aggregate descendants
             of the block.
 
-        * blocks_navigation: A dictionary that combines both the blocks and navigation data.
+        * blocks+navigation: A dictionary that combines both the blocks and navigation data.
+          Returned only if using the "blocks+navigation" endpoint.
 
     """
     class RequestInfo(object):
