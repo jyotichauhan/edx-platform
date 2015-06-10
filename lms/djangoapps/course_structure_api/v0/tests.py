@@ -3,6 +3,7 @@ Run these tests @ Devstack:
     paver test_system -s lms --fasttest --verbose --test_id=lms/djangoapps/course_structure_api
 """
 # pylint: disable=missing-docstring,invalid-name,maybe-no-member,attribute-defined-outside-init
+from abc import ABCMeta
 from datetime import datetime
 from mock import patch, Mock
 from itertools import product
@@ -159,7 +160,7 @@ class CourseViewTestsMixin(object):
         raise NotImplementedError
 
 
-class CourseDetailMixin(object):
+class CourseDetailTestMixin(object):
     """
     Mixin for views utilizing only the course_id kwarg.
     """
@@ -314,7 +315,7 @@ class CourseListTests(CourseViewTestsMixin, ModuleStoreTestCase):
             self.test_get()
 
 
-class CourseDetailTests(CourseDetailMixin, CourseViewTestsMixin, ModuleStoreTestCase):
+class CourseDetailTests(CourseDetailTestMixin, CourseViewTestsMixin, ModuleStoreTestCase):
     view = 'course_structure_api:v0:detail'
 
     def test_get(self):
@@ -322,7 +323,7 @@ class CourseDetailTests(CourseDetailMixin, CourseViewTestsMixin, ModuleStoreTest
         self.assertValidResponseCourse(response.data, self.course)
 
 
-class CourseStructureTests(CourseDetailMixin, CourseViewTestsMixin, ModuleStoreTestCase):
+class CourseStructureTests(CourseDetailTestMixin, CourseViewTestsMixin, ModuleStoreTestCase):
     view = 'course_structure_api:v0:structure'
 
     def setUp(self):
@@ -377,7 +378,7 @@ class CourseStructureTests(CourseDetailMixin, CourseViewTestsMixin, ModuleStoreT
         self.assertDictEqual(response.data, expected)
 
 
-class CourseGradingPolicyTests(CourseDetailMixin, CourseViewTestsMixin, ModuleStoreTestCase):
+class CourseGradingPolicyTests(CourseDetailTestMixin, CourseViewTestsMixin, ModuleStoreTestCase):
     view = 'course_structure_api:v0:grading_policy'
 
     def test_get(self):
@@ -403,10 +404,43 @@ class CourseGradingPolicyTests(CourseDetailMixin, CourseViewTestsMixin, ModuleSt
         self.assertListEqual(response.data, expected)
 
 
-class CourseBlocksOrNavigationMixin(CourseDetailMixin, CourseViewTestsMixin):
+#####################################################################################
+#
+# The following Mixins/Classes collectively test the CourseBlocksAndNavigation view.
+#
+# The class hierarchy is:
+#
+#      ----------------->  CourseBlocksOrNavigationTestMixin  <--------------
+#      |                                   ^                                |
+#      |                                   |                                |
+#      |        CourseNavigationTestMixin  |   CourseBlocksTestMixin        |
+#      |          ^                  ^     |    ^               ^           |
+#      |          |                  |     |    |               |           |
+#      |          |                  |     |    |               |           |
+#   CourseNavigationTests   CourseBlocksAndNavigationTests   CourseBlocksTests
+#
+#
+# Each Test Mixin is an abstract class that implements tests specific to its
+# corresponding functionality.
+#
+# The concrete Test classes are expected to define the following class fields:
+#
+#   block_navigation_view_type - The view's name as it should be passed to the django
+#       reverse method.
+#   container_fields - A list of fields that are expected to be included in the view's
+#       response for all container block types.
+#   block_fields - A list of fields that are expected to be included in the view's
+#       response for all block types.
+#
+######################################################################################
+
+
+class CourseBlocksOrNavigationTestMixin(CourseDetailTestMixin, CourseViewTestsMixin):
     """
     A Mixin class for testing all views related to Course blocks and/or navigation.
     """
+    __metaclass__ = ABCMeta
+
     view_supports_debug_mode = False
 
     def setUp(self):
@@ -414,7 +448,7 @@ class CourseBlocksOrNavigationMixin(CourseDetailMixin, CourseViewTestsMixin):
         Override the base `setUp` method to enroll the user in the course, since these views
         require enrollment for non-staff users.
         """
-        super(CourseBlocksOrNavigationMixin, self).setUp()
+        super(CourseBlocksOrNavigationTestMixin, self).setUp()
         CourseEnrollmentFactory(user=self.user, course_id=self.course.id)
 
     def create_user(self):
@@ -432,7 +466,7 @@ class CourseBlocksOrNavigationMixin(CourseDetailMixin, CourseViewTestsMixin):
 
     def test_get(self):
         with check_mongo_calls(3):
-            response = super(CourseBlocksOrNavigationMixin, self).test_get()
+            response = super(CourseBlocksOrNavigationTestMixin, self).test_get()
 
         # verify root element
         self.assertIn('root', response.data)
@@ -469,14 +503,16 @@ class CourseBlocksOrNavigationMixin(CourseDetailMixin, CourseViewTestsMixin):
         self.sequential.visible_to_staff_only = True
         modulestore().update_item(self.sequential, self.user.id)
 
-        response = super(CourseBlocksOrNavigationMixin, self).test_get()
+        response = super(CourseBlocksOrNavigationTestMixin, self).test_get()
         self.assertEquals(len(response.data[self.block_navigation_view_type]), 1)
 
 
-class CourseBlocksMixin(object):
+class CourseBlocksTestMixin(object):
     """
     A Mixin class for testing all views related to Course blocks.
     """
+    __metaclass__ = ABCMeta
+
     view_supports_debug_mode = False
     block_fields = ['id', 'type', 'display_name', 'web_url', 'block_url', 'graded', 'format']
 
@@ -505,10 +541,12 @@ class CourseBlocksMixin(object):
         self.assertEquals(root_block['block_count']['problem'], 1)
 
 
-class CourseNavigationMixin(object):
+class CourseNavigationTestMixin(object):
     """
     A Mixin class for testing all views related to Course navigation.
     """
+    __metaclass__ = ABCMeta
+
     def test_depth_zero(self):
         """
         Tests that all descendants are bundled into the root block when the navigation_depth is set to 0.
@@ -536,7 +574,7 @@ class CourseNavigationMixin(object):
             self.assertEquals(len(block['descendants']), expected_num_descendants)
 
 
-class CourseBlocksTests(CourseBlocksOrNavigationMixin, CourseBlocksMixin, ModuleStoreTestCase):
+class CourseBlocksTests(CourseBlocksOrNavigationTestMixin, CourseBlocksTestMixin, ModuleStoreTestCase):
     """
     A Test class for testing the Course 'blocks' view.
     """
@@ -544,7 +582,7 @@ class CourseBlocksTests(CourseBlocksOrNavigationMixin, CourseBlocksMixin, Module
     container_fields = ['children']
 
 
-class CourseNavigationTests(CourseBlocksOrNavigationMixin, CourseNavigationMixin, ModuleStoreTestCase):
+class CourseNavigationTests(CourseBlocksOrNavigationTestMixin, CourseNavigationTestMixin, ModuleStoreTestCase):
     """
     A Test class for testing the Course 'navigation' view.
     """
@@ -553,8 +591,8 @@ class CourseNavigationTests(CourseBlocksOrNavigationMixin, CourseNavigationMixin
     block_fields = []
 
 
-class CourseBlocksAndNavigationTests(CourseBlocksOrNavigationMixin, CourseBlocksMixin, CourseNavigationMixin,
-                                     ModuleStoreTestCase):
+class CourseBlocksAndNavigationTests(CourseBlocksOrNavigationTestMixin, CourseBlocksTestMixin,
+                                     CourseNavigationTestMixin, ModuleStoreTestCase):
     """
     A Test class for testing the Course 'blocks+navigation' view.
     """
