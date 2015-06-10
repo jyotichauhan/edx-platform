@@ -3,7 +3,6 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from ecommerce_api_client import exceptions
 from opaque_keys import InvalidKeyError
@@ -26,7 +25,7 @@ from student.models import CourseEnrollment
 from openedx.core.lib.api.authentication import SessionAuthenticationAllowInactiveUser
 from util.json_request import JsonResponse
 from verify_student.models import SoftwareSecurePhotoVerification
-from shoppingcart.processors.CyberSource2 import REASONCODE_MAP
+from shoppingcart.processors.CyberSource2 import REASONCODE_MAP, is_user_payment_error
 from django.utils.translation import ugettext as _
 
 
@@ -160,10 +159,9 @@ def checkout_receipt(request):
         page_title = _('Payment Failed')
         reason_code = request.POST['reason_code']
         # if the problem was with the info submitted by the user, we present more detailed messages.
-        is_user_payment_error = (200 <= int(reason_code) <= 233) or int(reason_code) in (101, 102, 240)
-        if is_user_payment_error:
+        if is_user_payment_error(reason_code):
             error_summary = _("There was a problem with the payment information you submitted.")
-            error_text = REASONCODE_MAP[request.POST['reason_code']]
+            error_text = REASONCODE_MAP[reason_code]
         else:
             error_summary = _("A system error occurred while processing your payment. You have not been charged.")
             error_text = _("Please wait a few minutes and then try again.")

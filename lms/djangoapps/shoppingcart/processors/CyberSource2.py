@@ -32,7 +32,7 @@ from collections import OrderedDict, defaultdict
 from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 from django.conf import settings
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext as _, ugettext_noop
 from edxmako.shortcuts import render_to_string
 from shoppingcart.models import Order
 from shoppingcart.processors.exceptions import *
@@ -40,6 +40,10 @@ from shoppingcart.processors.helpers import get_processor_config
 from microsite_configuration import microsite
 
 log = logging.getLogger(__name__)
+
+# Translators: this text appears when an unfamiliar error code occurs during payment,
+# for which we don't know a user-friendly message to display in advance.
+DEFAULT_REASON = ugettext_noop("UNKNOWN REASON")
 
 
 def process_postpay_callback(params):
@@ -582,7 +586,10 @@ CARDTYPE_MAP.update(
     }
 )
 
-REASONCODE_MAP = defaultdict(lambda: "UNKNOWN REASON")
+
+# Note: these messages come directly from official Cybersource documentation at:
+# http://apps.cybersource.com/library/documentation/dev_guides/CC_Svcs_SO_API/html/wwhelp/wwhimpl/js/html/wwhelp.htm#href=reason_codes.html
+REASONCODE_MAP = defaultdict(lambda: DEFAULT_REASON)
 REASONCODE_MAP.update(
     {
         '100': _('Successful transaction.'),
@@ -693,3 +700,19 @@ REASONCODE_MAP.update(
     }
 )
 
+
+def is_user_payment_error(reason_code):
+    """
+    Decide, based on the reason_code, whether or not it signifies a problem
+    with something the user did (rather than a system error beyond the user's
+    control).
+
+    This function is used to determine whether we can/should show the user a
+    message with suggested actions to fix the problem, or simply apologize and
+    ask her to try again later.
+    """
+    reason_code = str(reason_code)
+    if reason_code not in REASONCODE_MAP or REASONCODE_MAP[reason_code] == DEFAULT_REASON:
+        return False
+
+    return (200 <= int(reason_code) <= 233) or int(reason_code) in (101, 102, 240)
