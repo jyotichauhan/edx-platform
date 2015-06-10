@@ -904,12 +904,7 @@ class TestVideoDescriptorStudentViewJson(TestCase):
             'client_video_id': 'test_client_video_id',
             'duration': self.TEST_DURATION,
             'status': 'dummy',
-            'encoded_videos': [{
-                'profile': self.TEST_PROFILE,
-                'url': 'http://example.com/video',
-                'file_size': 222,
-                'bitrate': 333,
-            }],
+            'encoded_videos': [self.TEST_ENCODED_VIDEO],
             'courses': [self.video.location.course_key] if associate_course_in_val else [],
         })
         self.val_video = get_video_info(self.TEST_EDX_VIDEO_ID)  # pylint: disable=attribute-defined-outside-init
