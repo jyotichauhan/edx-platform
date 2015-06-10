@@ -6,9 +6,7 @@ from django.utils.translation import ugettext as _
 <%inherit file="../main.html" />
 <%block name="bodyclass">register verification-process step-requirements</%block>
 
-<%block name="pagetitle">
-${_("Receipt")}
-</%block>
+<%block name="pagetitle">${page_title}</%block>
 
 <%block name="header_extras">
 <script type="text/template" id="receipt-tpl">
@@ -33,11 +31,15 @@ ${_("Receipt")}
             <i class="msg-icon icon fa fa-exclamation-triangle" aria-hidden="true"></i>
             <div class="msg-content">
                 <h3 class="title">
-                    <span class="sr">${ _("Error:") }</span>
-                    ${ _("Error") }
+                    <span class="sr">${error_summary}</span>
+                    ${error_summary}
                 </h3>
                 <div class="copy">
-                    <p>${ _("Could not retrieve payment information") }</p>
+                    <p>${error_text}</p>
+                </div>
+                <div class="msg">
+                    <p><br>${ _(u"For more assistance, please contact {email}.").format(
+    email="<a href=\"mailto:{email}\">{email}</a>".format(email=payment_support_email)) }</p>
                 </div>
             </div>
         </div>
@@ -46,7 +48,7 @@ ${_("Receipt")}
 
 <div class="container">
     <section class="wrapper carousel">
-        <div id="receipt-container" class="pay-and-verify" data-platform-name='${platform_name}' data-verified='${verified}'>
+        <div id="receipt-container" class="pay-and-verify hidden" data-is-payment-complete='${is_payment_complete}' data-platform-name='${platform_name}' data-verified='${verified}'>
             <h1>${_("Loading Order Data...")}</h1>
             <span>${ _("Please wait while we retrieve your order details.") }</span>
         </div>

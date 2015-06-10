@@ -26,6 +26,8 @@ from student.models import CourseEnrollment
 from openedx.core.lib.api.authentication import SessionAuthenticationAllowInactiveUser
 from util.json_request import JsonResponse
 from verify_student.models import SoftwareSecurePhotoVerification
+from shoppingcart.processors.CyberSource2 import REASONCODE_MAP
+from django.utils.translation import ugettext as _
 
 
 log = logging.getLogger(__name__)
@@ -137,7 +139,6 @@ class BasketsView(APIView):
 
 
 @csrf_exempt
-@cache_page(1800)
 def checkout_cancel(_request):
     """ Checkout/payment cancellation view. """
     context = {'payment_support_email': microsite.get_value('payment_support_email', settings.PAYMENT_SUPPORT_EMAIL)}
@@ -148,9 +149,37 @@ def checkout_cancel(_request):
 @login_required
 def checkout_receipt(request):
     """ Receipt view. """
+
+    page_title = _('Receipt')
+    is_payment_complete = True
+    is_cybersource = all(k in request.POST for k in ('signed_field_names', 'decision', 'reason_code'))
+    if is_cybersource and request.POST['decision'] != 'ACCEPT':
+        # Cybersource may redirect users to this view if it couldn't recover
+        # from an error while capturing payment info.
+        is_payment_complete = False
+        page_title = _('Payment Failed')
+        reason_code = request.POST['reason_code']
+        # if the problem was with the info submitted by the user, we present more detailed messages.
+        is_user_payment_error = (200 <= int(reason_code) <= 233) or int(reason_code) in (101, 102, 240)
+        if is_user_payment_error:
+            error_summary = _("There was a problem with the payment information you submitted.")
+            error_text = REASONCODE_MAP[request.POST['reason_code']]
+        else:
+            error_summary = _("A system error occurred while processing your payment. You have not been charged.")
+            error_text = _("Please wait a few minutes and then try again.")
+    else:
+        # if anything goes wrong rendering the receipt, it indicates a problem fetching order data.
+        error_summary = _("A system error occurred while retrieving your receipt.")
+        error_text = _("We could not locate the order information.")
+
     context = {
+        'page_title': page_title,
+        'is_payment_complete': is_payment_complete,
         'platform_name': microsite.get_value('platform_name', settings.PLATFORM_NAME),
-        'verified': SoftwareSecurePhotoVerification.verification_valid_or_pending(request.user).exists()
+        'verified': SoftwareSecurePhotoVerification.verification_valid_or_pending(request.user).exists(),
+        'error_text': error_text,
+        'error_summary': error_summary,
+        'payment_support_email': microsite.get_value('payment_support_email', settings.PAYMENT_SUPPORT_EMAIL),
     }
     return render_to_response('commerce/checkout_receipt.html', context)
 
