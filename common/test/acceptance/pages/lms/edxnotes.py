@@ -590,6 +590,8 @@ class EdxNoteHighlight(NoteChild):
         Clicks edit button.
         """
         self.q(css=self._bounded_selector(".annotator-edit")).first.click()
+        import time
+        time.sleep(1)
         self.wait_for_editor_visibility()
         return self
 
